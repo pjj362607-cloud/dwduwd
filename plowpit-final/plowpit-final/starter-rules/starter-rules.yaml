@@ -1,0 +1,138 @@
+# =============================================================================
+# starter-rules/starter-rules.yaml
+# 스펙 E의 starter rules 3개
+# 원칙: 룰은 정책층. 헌법 변경층 아님.
+#       모든 룰 발동 결과는 event로 남긴다.
+#       auto approve, auto close exception, final decision 우회 금지.
+# =============================================================================
+
+# ── 룰 1: 승인 규칙 ─────────────────────────────────────────────────────────
+# 견적금액이 기준을 초과하면 반드시 Approver 승인 필요 알림 생성
+- rule_id: "approval_required_high_amount"
+  rule_version: 1
+  is_active: true
+
+  scope_type: "global"
+  scope_id: null
+
+  rule_type: "approval"
+  object_type: "quote"
+  trigger_event: "quote_draft_created"
+
+  # 조건: 견적 총액이 5,000,000원 초과
+  conditions:
+    "payload.total_amount":
+      $gt: 5000000
+
+  # 액션: 승인 필요 알림 생성 (auto_approve 아님. 알림만.)
+  action:
+    type: "create_alert"
+    params:
+      alert_type: "approval_required"
+      message: "견적 금액이 기준을 초과하여 Approver 승인이 필요합니다."
+      required_role: "Approver"
+
+  priority: 10
+  stop_processing: false
+  reason_code: "high_amount_approval_required"
+  severity: "medium"
+  creates_event_name: "quote_approval_required_flagged"
+
+  effective_from: "2024-01-01T00:00:00Z"
+  effective_to: null
+
+  created_by: null
+  approved_by: null
+  notes: >
+    견적 금액 5백만원 초과 시 승인 필요 플래그 생성.
+    Approver가 직접 quote_approved 이벤트를 생성해야 함.
+    이 룰은 자동 승인하지 않음.
+
+# ── 룰 2: 출고 금지 Guardrail ───────────────────────────────────────────────
+# 재고 확인이 완료되지 않은 주문에 대한 출고 지시 시도를 차단
+- rule_id: "shipment_guard_inventory_not_confirmed"
+  rule_version: 1
+  is_active: true
+
+  scope_type: "global"
+  scope_id: null
+
+  rule_type: "guardrail"
+  object_type: "shipment"
+  trigger_event: "shipment_dispatch_instructed"
+
+  # 조건: 연결된 order가 inventory_checking 또는 inventory_insufficient 상태
+  # (실제 object_snapshot에서 연결 order 상태를 확인)
+  conditions:
+    "payload.order_state":
+      $in: ["inventory_checking", "inventory_insufficient", "inventory_rechecking"]
+
+  # 액션: 출고 예외 생성 (auto_complete_shipment 아님)
+  action:
+    type: "create_exception"
+    params:
+      exception_type: "shipment_instruction_conflict"
+      severity: "blocking"
+      description: "재고 확인이 완료되지 않은 상태에서 출고 지시가 시도되었습니다."
+      assigned_role: "ExceptionReviewer"
+
+  priority: 1          # guardrail은 가장 높은 우선순위
+  stop_processing: true # guardrail 발동 시 이후 룰 평가 중단
+  reason_code: "inventory_not_confirmed_before_shipment"
+  severity: "blocking"
+  creates_event_name: "shipment_blocked_inventory_conflict"
+
+  effective_from: "2024-01-01T00:00:00Z"
+  effective_to: null
+
+  created_by: null
+  approved_by: null
+  notes: >
+    재고 미확인 출고 지시 차단 guardrail.
+    이 룰이 발동하면 stop_processing = true로 이후 룰 평가를 중단.
+    ExceptionReviewer가 예외를 해소한 후에만 출고 진행 가능.
+
+# ── 룰 3: 예외 생성 규칙 ────────────────────────────────────────────────────
+# 외부 시스템에서 동일 external_event_id 재전송 감지 시 예외 생성
+- rule_id: "exception_external_resend_detected"
+  rule_version: 1
+  is_active: true
+
+  scope_type: "global"
+  scope_id: null
+
+  rule_type: "exception"
+  object_type: "order"
+  trigger_event: "order_duplicate_flagged"
+
+  # 조건: dedupe_key가 존재하고 외부 채널에서 온 이벤트
+  conditions:
+    "event.source_channel":
+      $in: ["external_erp", "external_wms", "api"]
+
+  # 액션: 예외 생성 (확정 아님. ExceptionReviewer가 처리)
+  action:
+    type: "create_exception"
+    params:
+      exception_type: "external_system_resend"
+      severity: "medium"
+      description: "외부 시스템에서 동일 주문 재전송이 감지되었습니다. 중복 여부를 확인하세요."
+      assigned_role: "ExceptionReviewer"
+
+  priority: 20
+  stop_processing: false
+  reason_code: "external_duplicate_detected"
+  severity: "medium"
+  creates_event_name: "exception_created"
+
+  effective_from: "2024-01-01T00:00:00Z"
+  effective_to: null
+
+  created_by: null
+  approved_by: null
+  notes: >
+    외부 시스템 재전송 감지 예외 생성 룰.
+    creates_event_name이 exception_created이므로
+    RulesService가 ExceptionsService를 통해 예외 객체를 별도 생성함.
+    이 룰은 자동으로 중복 확정하지 않음.
+    ExceptionReviewer 또는 OrderOps가 dedupe_candidates를 확인 후 처리.

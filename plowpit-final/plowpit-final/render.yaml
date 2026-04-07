@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: aiops-studio
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false

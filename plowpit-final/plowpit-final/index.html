@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 운영체계 스튜디오</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── 변수 ─────────────────────────────────────────────── */
+:root {
+  /* 공통 */
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'DM Sans', sans-serif;
+}
+
+/* ── 고객 테마 ── */
+.world-customer {
+  --bg:      #faf9f7;
+  --surface: #ffffff;
+  --border:  #e8e4df;
+  --border2: #d4cfc9;
+  --text:    #1a1714;
+  --sub:     #6b6560;
+  --accent:  #1a1714;
+  --accent2: #c17c3a;
+  --ok:      #2d7a47;
+  --warn:    #b45309;
+  --err:     #c0392b;
+  --muted:   #9e9891;
+}
+
+/* ── 관리자 테마 ── */
+.world-admin {
+  --bg:      #080c10;
+  --surface: #0e1419;
+  --border:  #1e2a35;
+  --border2: #2a3a47;
+  --text:    #c8d8e4;
+  --sub:     #4a6070;
+  --accent:  #00d4ff;
+  --accent2: #ff6b35;
+  --ok:      #00e676;
+  --warn:    #ffd600;
+  --err:     #ff3d3d;
+  --muted:   #3a5060;
+}
+
+/* ── 리셋 ─────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);transition:background .2s,color .2s}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── 공통 버튼 ─────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.25rem;border-radius:4px;
+     font-family:var(--sans);font-size:.85rem;font-weight:500;cursor:pointer;border:1px solid transparent;
+     transition:all .15s;text-decoration:none;line-height:1}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* 고객용 버튼 */
+.world-customer .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.world-customer .btn-primary:hover{background:#333}
+.world-customer .btn-ghost{background:transparent;border-color:var(--border2);color:var(--sub)}
+.world-customer .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.world-customer .btn-outline{background:transparent;border-color:var(--accent);color:var(--accent)}
+.world-customer .btn-outline:hover{background:var(--accent);color:#fff}
+
+/* 관리자용 버튼 */
+.world-admin .btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.world-admin .btn-primary:hover{background:#00b8d9}
+.world-admin .btn-ghost{background:transparent;border-color:var(--border2);color:var(--text)}
+.world-admin .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.world-admin .btn-danger{background:transparent;border-color:var(--err);color:var(--err)}
+.world-admin .btn-danger:hover{background:rgba(255,61,61,.1)}
+
+/* ── 공통 카드 ─────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem}
+.card-sm{padding:1rem}
+.card-xs{padding:.75rem}
+
+/* ── 인풋 ─────────────────────────────────────────────── */
+input,select,textarea{
+  background:var(--surface);border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-family:var(--sans);font-size:.9rem;padding:.65rem .9rem;
+  width:100%;transition:border-color .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--surface)}
+label{display:block;font-size:.8rem;font-weight:500;color:var(--sub);margin-bottom:.4rem}
+
+/* ── 태그 ─────────────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;gap:.25rem;font-family:var(--mono);font-size:.65rem;
+     padding:.2rem .55rem;border-radius:3px;border:1px solid;font-weight:500;letter-spacing:.04em}
+.world-admin .tag-high{color:var(--err);border-color:var(--err);background:rgba(255,61,61,.07)}
+.world-admin .tag-med{color:var(--warn);border-color:var(--warn);background:rgba(255,214,0,.07)}
+.world-admin .tag-low{color:var(--sub);border-color:var(--border2);background:transparent}
+.world-admin .tag-ok{color:var(--ok);border-color:var(--ok);background:rgba(0,230,118,.07)}
+
+/* ── 알림 박스 ─────────────────────────────────────────── */
+.alert{padding:.75rem 1rem;border-radius:6px;font-size:.85rem;line-height:1.5;border:1px solid}
+.world-customer .alert-err{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.world-customer .alert-ok{background:#f0fdf4;border-color:#86efac;color:#166534}
+.world-customer .alert-info{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+.world-customer .alert-warn{background:#fffbeb;border-color:#fcd34d;color:#92400e}
+.world-admin .alert-err{border-color:rgba(255,61,61,.3);background:rgba(255,61,61,.06);color:var(--err)}
+.world-admin .alert-ok{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.06);color:var(--ok)}
+.world-admin .alert-info{border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.06);color:var(--accent)}
+.world-admin .alert-warn{border-color:rgba(255,214,0,.3);background:rgba(255,214,0,.06);color:var(--warn)}
+
+/* ── 스피너 ─────────────────────────────────────────────── */
+.spin{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);
+      border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 구분선 ─────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+/* ────────────────────────────────────────────────────────
+   고객 레이아웃
+──────────────────────────────────────────────────────── */
+.c-root{min-height:100%;display:flex;flex-direction:column}
+
+.c-header{padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;
+           border-bottom:1px solid var(--border);background:var(--surface)}
+.c-logo{font-family:var(--serif);font-size:1.2rem;letter-spacing:-.01em;color:var(--text)}
+.c-logo span{font-style:italic;color:var(--accent2)}
+
+.c-main{flex:1;padding:2.5rem 1.5rem}
+.c-wrap{max-width:640px;margin:0 auto}
+.c-wrap-wide{max-width:900px;margin:0 auto}
+
+.c-page-title{font-family:var(--serif);font-size:2rem;line-height:1.2;margin-bottom:.5rem;letter-spacing:-.02em}
+.c-page-sub{color:var(--sub);font-size:.9rem;line-height:1.6;margin-bottom:2rem}
+
+.c-footer{padding:1.5rem;text-align:center;border-top:1px solid var(--border);
+           font-size:.78rem;color:var(--muted)}
+
+/* 스텝 표시 */
+.c-steps{display:flex;align-items:center;gap:.5rem;margin-bottom:2.5rem;flex-wrap:wrap}
+.c-step{display:flex;align-items:center;gap:.4rem}
+.c-step-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+             justify-content:center;font-size:.65rem;font-weight:700;border:1.5px solid var(--border2);color:var(--muted)}
+.c-step-dot.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.c-step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.c-step-label{font-size:.78rem;color:var(--muted)}
+.c-step-label.active{color:var(--text);font-weight:600}
+.c-step-sep{font-size:.7rem;color:var(--border2)}
+
+/* 선택 카드 */
+.c-opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem}
+.c-opt{padding:1rem;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;
+        transition:all .15s;background:var(--surface)}
+.c-opt:hover{border-color:var(--border2)}
+.c-opt.sel{border-color:var(--accent);background:var(--bg)}
+.c-opt-title{font-weight:600;font-size:.88rem;margin-bottom:.25rem}
+.c-opt-sub{font-size:.75rem;color:var(--sub);line-height:1.4}
+
+/* 추천 결과 */
+.c-rec{border:2px solid var(--accent2);border-radius:10px;padding:1.75rem;background:var(--surface)}
+.c-rec-type{display:inline-block;font-size:.75rem;font-weight:700;padding:.3rem .8rem;
+             border-radius:4px;margin-bottom:.75rem;letter-spacing:.04em}
+.c-rec-engine{font-family:var(--serif);font-size:1.6rem;margin-bottom:.4rem;letter-spacing:-.02em}
+.c-rec-desc{font-size:.85rem;color:var(--sub);line-height:1.6;margin-bottom:1.25rem}
+.c-rec-rows{display:flex;gap:1.5rem;flex-wrap:wrap}
+.c-rec-item{display:flex;flex-direction:column;gap:.2rem}
+.c-rec-key{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.c-rec-val{font-size:.88rem;font-weight:500}
+.c-price{font-family:var(--mono);font-size:1.15rem;font-weight:500;color:var(--accent2);margin-top:.75rem}
+
+/* 상태 뱃지 */
+.c-status{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem .9rem;
+           border-radius:20px;font-size:.82rem;font-weight:600}
+.c-status.접수됨{background:#eff6ff;color:#1d4ed8}
+.c-status.검토중{background:#fffbeb;color:#92400e}
+.c-status.설정중{background:#faf5ff;color:#6b21a8}
+.c-status.완료{background:#f0fdf4;color:#166534}
+.c-status.추가정보필요{background:#fff7ed;color:#9a3412}
+
+/* 진행 표시 */
+.c-progress{display:flex;flex-direction:column;gap:.75rem;margin:1.5rem 0}
+.c-prog-item{display:flex;align-items:center;gap:.75rem}
+.c-prog-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+             justify-content:center;font-size:.75rem;flex-shrink:0}
+.c-prog-dot.done{background:var(--ok);color:#fff}
+.c-prog-dot.active{background:var(--accent2);color:#fff}
+.c-prog-dot.pending{background:var(--border);color:var(--muted)}
+.c-prog-label{font-size:.88rem;font-weight:500}
+.c-prog-sub{font-size:.75rem;color:var(--sub)}
+
+/* ────────────────────────────────────────────────────────
+   관리자 레이아웃
+──────────────────────────────────────────────────────── */
+.a-root{height:100%;display:flex;flex-direction:column}
+
+.a-header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.25rem;
+           border-bottom:1px solid var(--border);background:var(--surface);
+           position:sticky;top:0;z-index:100;flex-shrink:0}
+.a-logo{font-family:var(--mono);font-size:.8rem;font-weight:500;color:var(--accent);
+         white-space:nowrap;letter-spacing:.06em}
+.a-nav{display:flex;gap:.15rem;flex:1}
+.a-nav-btn{padding:.38rem .75rem;border-radius:3px;font-size:.78rem;font-weight:500;
+            cursor:pointer;border:none;background:transparent;color:var(--sub);
+            font-family:var(--sans);transition:all .15s}
+.a-nav-btn:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.a-nav-btn.active{color:var(--accent);background:rgba(0,212,255,.08)}
+.a-header-end{display:flex;align-items:center;gap:.75rem;margin-left:auto}
+.a-status{width:6px;height:6px;border-radius:50%;background:var(--ok);
+           box-shadow:0 0 6px var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.a-settings-btn{font-family:var(--mono);font-size:.65rem;color:var(--sub);
+                  border:1px solid var(--border);padding:.2rem .55rem;border-radius:2px;
+                  cursor:pointer;white-space:nowrap;background:transparent;
+                  max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.a-settings-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.a-body{flex:1;overflow-y:auto;padding:1.5rem}
+.a-wrap{max-width:1200px;margin:0 auto}
+.a-wrap-narrow{max-width:760px;margin:0 auto}
+
+.a-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap}
+.a-sec-title{font-size:.95rem;font-weight:700}
+.a-sec-sub{font-size:.72rem;color:var(--sub);margin-top:.1rem}
+
+/* 통계 */
+.a-stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+         padding:1rem;position:relative;overflow:hidden}
+.a-stat-label{font-size:.65rem;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem}
+.a-stat-val{font-size:1.9rem;font-weight:800;line-height:1;letter-spacing:-.03em}
+.a-stat-sub{font-size:.68rem;color:var(--sub);margin-top:.25rem}
+.a-stat-bar{position:absolute;bottom:0;left:0;right:0;height:2px}
+
+/* 테이블 */
+.a-table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{font-family:var(--mono);font-size:.63rem;text-transform:uppercase;letter-spacing:.08em;
+   color:var(--sub);padding:.55rem .7rem;border-bottom:1px solid var(--border);text-align:left;font-weight:400}
+td{padding:.55rem .7rem;border-bottom:1px solid rgba(30,42,53,.6);vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-mono{font-family:var(--mono);font-size:.68rem;color:var(--sub)}
+.td-clip{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
+           display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:8px;
+        width:100%;max-width:480px;max-height:80vh;overflow-y:auto;padding:1.5rem}
+.modal-title{font-size:.95rem;font-weight:700;margin-bottom:1.25rem;
+              display:flex;justify-content:space-between;align-items:center}
+.close-x{background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem;line-height:1}
+.close-x:hover{color:var(--text)}
+
+/* 타임라인 */
+.a-tl{display:flex;flex-direction:column}
+.a-tl-item{display:flex;gap:.9rem;padding:.65rem 0;position:relative}
+.a-tl-item::before{content:'';position:absolute;left:11px;top:30px;bottom:-8px;
+                    width:1px;background:var(--border)}
+.a-tl-item:last-child::before{display:none}
+.a-tl-dot{width:23px;height:23px;border-radius:50%;border:2px solid var(--border2);
+           background:var(--surface);flex-shrink:0;display:flex;align-items:center;
+           justify-content:center;font-size:.6rem;margin-top:2px}
+.a-tl-dot.ok{border-color:var(--ok);background:rgba(0,230,118,.1);color:var(--ok)}
+.a-tl-dot.fail{border-color:var(--err);background:rgba(255,61,61,.1);color:var(--err)}
+.a-tl-dot.info{border-color:var(--accent);background:rgba(0,212,255,.1);color:var(--accent)}
+.a-tl-title{font-size:.8rem;font-weight:700;margin-bottom:.1rem}
+.a-tl-meta{font-family:var(--mono);font-size:.63rem;color:var(--sub)}
+
+/* 그리드 */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ══════════════════════════════════════════════════════════
+// 라우터 (해시 기반)
+// ══════════════════════════════════════════════════════════
+const useRouter = () => {
+  const [path, setPath] = useState(() => window.location.hash.replace('#','') || '/');
+  useEffect(() => {
+    const onHash = () => setPath(window.location.hash.replace('#','') || '/');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const go = (p) => { window.location.hash = p; };
+  return { path, go };
+};
+
+// ══════════════════════════════════════════════════════════
+// 인증 (관리자 PIN — 간단한 세션 게이트)
+// ══════════════════════════════════════════════════════════
+const ADMIN_PIN = '0000'; // 실서비스: 환경변수 또는 서버 토큰으로 교체
+const isAdmin = () => sessionStorage.getItem('admin_auth') === '1';
+const setAdmin = () => sessionStorage.setItem('admin_auth', '1');
+const clearAdmin = () => sessionStorage.removeItem('admin_auth');
+
+// ══════════════════════════════════════════════════════════
+// API 클라이언트
+// ══════════════════════════════════════════════════════════
+const getApiUrl = () => {
+  const stored = localStorage.getItem('api_url');
+  if (stored) return stored;
+  // Render: 같은 도메인에서 서빙되므로 경로만 사용 (빈 문자열)
+  return '';
+};
+
+// 고객용 호출 — 에러를 사람 말로 변환
+const customerFetch = async (path, opts = {}) => {
+  try {
+    const res = await fetch(getApiUrl() + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error('SERVER_ERROR');
+    return data;
+  } catch (e) {
+    // 2층 오류: 내부 메시지는 console에만
+    console.error('[API Error]', e);
+    throw new Error('CUSTOMER_ERROR');
+  }
+};
+
+// 관리자용 호출 — 에러 원문 허용
+const adminFetch = async (path, opts = {}) => {
+  const res = await fetch(getApiUrl() + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+};
+
+// 고객 에러 메시지 변환
+const friendlyError = (code) => ({
+  SERVER_ERROR:   '주문 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.',
+  CUSTOMER_ERROR: '연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+  MISSING_FIELD:  '입력 정보를 다시 확인해주세요.',
+  NETWORK:        '네트워크 연결을 확인해주세요.',
+})[code] || '주문을 처리하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
+// publicOrderId 생성
+const genPublicId = () => {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rd = Math.random().toString(36).slice(2,5).toUpperCase();
+  return `ORD-${ts}-${rd}`;
+};
+
+// 내부 용어 → 고객 언어 변환
+const LABEL = {
+  STANDARD: '바로 시작 가능',
+  SEMI:     '검수 후 진행',
+  CUSTOM:   '프로젝트 접수 후 진행',
+  shared:   '서비스 연결 방식 사용',
+  customer: '고객 API 직접 연결',
+  hybrid:   '혼합 방식',
+  web:      '웹 기반',
+  local:    '로컬 설치',
+  self:     '자체 운영',
+  managed:  '관리형 운영',
+  접수됨:   '접수됨',
+  검토중:   '검토 중',
+  설정중:   '설정 진행 중',
+  완료:     '완료',
+  추가정보필요: '추가 정보가 필요합니다',
+};
+
+// 내부 상태 → 고객 상태 변환
+const toCustomerStatus = (state) => {
+  if (!state) return '접수됨';
+  if (state.includes('ordered') || state.includes('intake') || state === 'configuring') return '접수됨';
+  if (state.includes('verification') || state.includes('quoted') || state.includes('reviewing')) return '검토중';
+  if (state.includes('install') || state.includes('connect') || state.includes('package') || state.includes('license') || state.includes('delivery')) return '설정중';
+  if (state === 'running' || state === 'completed' || state === 'converted') return '완료';
+  if (state.includes('failed') || state.includes('declined')) return '추가정보필요';
+  return '접수됨';
+};
+
+// ══════════════════════════════════════════════════════════
+// 분류 엔진 (오프라인 동작)
+// ══════════════════════════════════════════════════════════
+const classify = ({ problem_domain, user_scope, data_sensitivity, api_mode, tech_readiness }) => {
+  if (user_scope === 'org_wide' || data_sensitivity === 'high' ||
+      (problem_domain === 'workflow' && user_scope !== 'individual')) return 'CUSTOM';
+  if (api_mode === 'customer' || data_sensitivity === 'medium' ||
+      tech_readiness === 'none' || tech_readiness === 'basic') return 'SEMI';
+  return 'STANDARD';
+};
+
+const recommend = (problem, config) => {
+  const system_type = classify({ ...problem, ...config });
+  const engines = {
+    cs_automation: '고객 응대 AI', data_analysis: '데이터 분석 AI',
+    document_processing: '문서 처리 AI', workflow: '업무 자동화 AI',
+  };
+  const descs = {
+    STANDARD: '별도 검수 없이 바로 시작할 수 있습니다.',
+    SEMI:     '환경을 간단히 확인한 후 빠르게 시작합니다.',
+    CUSTOM:   '요구사항을 함께 정의한 후 맞춤형으로 구축합니다.',
+  };
+  const ranges = { STANDARD:[300000,800000], SEMI:[800000,3000000], CUSTOM:[3000000,0] };
+  const [mn,mx] = ranges[system_type];
+  return {
+    system_type,
+    engine: engines[problem.problem_domain] || 'AI 어시스턴트',
+    description: descs[system_type],
+    price: mx > 0 ? `₩${(mn/10000).toFixed(0)}만 ~ ₩${(mx/10000).toFixed(0)}만` : `₩${(mn/10000).toFixed(0)}만~`,
+  };
+};
+
+// ══════════════════════════════════════════════════════════
+// ── 고객 세계 ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+// ── 고객 헤더 ─────────────────────────────────────────────
+const CHeader = ({ go }) => (
+  <header className="c-header">
+    <div className="c-logo" onClick={() => go('/')} style={{cursor:'pointer'}}>
+      AI<span>Ops</span> Studio
+    </div>
+    <button className="btn btn-ghost" style={{fontSize:'.78rem'}}
+      onClick={() => go('/order/status')}>내 주문 확인</button>
+  </header>
+);
+
+// ── 랜딩 ──────────────────────────────────────────────────
+const Landing = ({ go }) => (
+  <div className="c-main">
+    <div className="c-wrap" style={{paddingTop:'3rem',textAlign:'center'}}>
+      <div style={{display:'inline-block',fontSize:'.75rem',fontWeight:600,color:'var(--accent2)',
+                   border:'1px solid var(--accent2)',borderRadius:'20px',padding:'.3rem .9rem',
+                   marginBottom:'1.5rem',letterSpacing:'.05em'}}>
+        AI 운영 시스템 도입
+      </div>
+      <h1 className="c-page-title" style={{fontSize:'2.8rem',marginBottom:'1rem'}}>
+        우리 업무에 맞는<br/>AI를 찾아드립니다
+      </h1>
+      <p className="c-page-sub" style={{fontSize:'1rem',maxWidth:'420px',margin:'0 auto 2.5rem'}}>
+        복잡한 기술 결정 없이도 목적에 맞는 AI를 구성하고,
+        빠르게 도입할 수 있습니다.
+      </p>
+      <div style={{display:'flex',gap:'.75rem',justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="btn btn-primary" style={{padding:'.75rem 2rem',fontSize:'.95rem'}}
+          onClick={() => go('/configure/step-1')}>AI 구성 시작하기 →</button>
+        <button className="btn btn-ghost" onClick={() => go('/order/status')}>
+          진행 상태 확인
+        </button>
+      </div>
+      <div style={{marginTop:'4rem',display:'flex',gap:'2rem',justifyContent:'center',flexWrap:'wrap'}}>
+        {[['바로 시작','단순 업무부터 즉시 도입'],['검토 후 진행','환경 확인 후 빠르게 시작'],['맞춤 구축','요구사항 정의 후 전용 구축']].map(([t,d],i) => (
+          <div key={i} style={{textAlign:'center',maxWidth:'160px'}}>
+            <div style={{fontWeight:700,marginBottom:'.3rem'}}>{t}</div>
+            <div style={{fontSize:'.8rem',color:'var(--sub)'}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// ── Step 1: 문제 선택 ──────────────────────────────────────
+const PROBLEM_OPTS = [
+  { id:'cs_automation', label:'고객 응대', sub:'상담, 채팅, 이메일 처리' },
+  { id:'data_analysis', label:'데이터 분석', sub:'리포트, 인사이트 도출' },
+  { id:'document_processing', label:'문서 처리', sub:'계약서, 보고서, 분류' },
+  { id:'workflow', label:'업무 자동화', sub:'프로세스, 승인, 연동' },
+  { id:'knowledge_base', label:'지식 검색', sub:'내부 Q&A, 매뉴얼 검색' },
+  { id:'other', label:'기타', sub:'직접 설명할게요' },
+];
+const SCOPE_OPTS = [
+  { id:'individual',label:'개인'}, {id:'team',label:'팀 (2~20명)'},
+  { id:'department',label:'부서'}, {id:'org_wide',label:'전사'},
+];
+
+const Step1 = ({ go, form, setForm }) => {
+  const ok = form.problem_domain && form.user_scope;
+  return (
+    <div className="c-main"><div className="c-wrap">
+      <div className="c-steps">
+        {['문제 선택','환경 설정','구성 확인','주문 완료'].map((s,i) => (
+          <div key={i} className="c-step">
+            {i > 0 && <span className="c-step-sep">›</span>}
+            <div className={`c-step-dot ${i===0?'active':''}`}>{i+1}</div>
+            <span className={`c-step-label ${i===0?'active':''}`}>{s}</span>
+          </div>
+        ))}
+      </div>
+      <h2 className="c-page-title">어떤 업무를 개선하고 싶으신가요?</h2>
+      <p className="c-page-sub">가장 먼저 해결하고 싶은 업무 영역을 선택해주세요.</p>
+      <div className="c-opt-grid" style={{marginBottom:'2rem'}}>
+        {PROBLEM_OPTS.map(o => (
+          <div key={o.id} className={`c-opt${form.problem_domain===o.id?' sel':''}`}
+            onClick={() => setForm(f=>({...f,problem_domain:o.id}))}>
+            <div className="c-opt-title">{o.label}</div>
+            <div className="c-opt-sub">{o.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="divider"/>
+      <h3 style={{fontWeight:700,marginBottom:'1rem'}}>몇 명이 사용하게 되나요?</h3>
+      <div className="c-opt-grid" style={{marginBottom:'2rem'}}>
+        {SCOPE_OPTS.map(o => (
+          <div key={o.id} className={`c-opt${form.user_scope===o.id?' sel':''}`}
+            onClick={() => setForm(f=>({...f,user_scope:o.id}))}>
+            <div className="c-opt-title">{o.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',justifyContent:'flex-end'}}>
+        <button className="btn btn-primary" disabled={!ok}
+          onClick={() => go('/configure/step-2')}>다음 →</button>
+      </div>
+    </div></div>
+  );
+};
+
+// ── Step 2: 구성 선택 ──────────────────────────────────────
+const SENSI_OPTS = [
+  { id:'low', label:'일반 데이터', sub:'공개 또는 비민감 내부 자료' },
+  { id:'medium', label:'제한 데이터', sub:'내부 한정 자료' },
+  { id:'high', label:'민감 데이터', sub:'개인정보, 기밀 자료 포함' },
+];
+const TECH_OPTS = [
+  { id:'none', label:'비기술 팀', sub:'IT 담당자 없음' },
+  { id:'basic', label:'기본 IT', sub:'비개발자 IT 담당' },
+  { id:'advanced', label:'개발팀 보유', sub:'자체 기술 대응 가능' },
+];
+
+const Step2 = ({ go, form, setForm }) => {
+  const ok = form.data_sensitivity && form.tech_readiness;
+  return (
+    <div className="c-main"><div className="c-wrap">
+      <div className="c-steps">
+        {['문제 선택','환경 설정','구성 확인','주문 완료'].map((s,i) => (
+          <div key={i} className="c-step">
+            {i > 0 && <span className="c-step-sep">›</span>}
+            <div className={`c-step-dot ${i<1?'done':i===1?'active':''}`}>{i<1?'✓':i+1}</div>
+            <span className={`c-step-label ${i===1?'active':''}`}>{s}</span>
+          </div>
+        ))}
+      </div>
+      <h2 className="c-page-title">환경을 알려주세요</h2>
+      <p className="c-page-sub">더 정확한 구성을 위해 몇 가지 확인합니다.</p>
+      <h3 style={{fontWeight:700,marginBottom:'1rem'}}>다루는 데이터 유형은?</h3>
+      <div className="c-opt-grid" style={{marginBottom:'2rem'}}>
+        {SENSI_OPTS.map(o => (
+          <div key={o.id} className={`c-opt${form.data_sensitivity===o.id?' sel':''}`}
+            onClick={() => setForm(f=>({...f,data_sensitivity:o.id}))}>
+            <div className="c-opt-title">{o.label}</div>
+            <div className="c-opt-sub">{o.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="divider"/>
+      <h3 style={{fontWeight:700,marginBottom:'1rem'}}>내부 기술 역량은?</h3>
+      <div className="c-opt-grid" style={{marginBottom:'2rem'}}>
+        {TECH_OPTS.map(o => (
+          <div key={o.id} className={`c-opt${form.tech_readiness===o.id?' sel':''}`}
+            onClick={() => setForm(f=>({...f,tech_readiness:o.id}))}>
+            <div className="c-opt-title">{o.label}</div>
+            <div className="c-opt-sub">{o.sub}</div>
+          </div>
+        ))}
+      </div>
+      {/* 연결 방식 — 고객 언어로만 */}
+      <div className="card card-sm" style={{marginBottom:'2rem'}}>
+        <label>AI 연결 방식</label>
+        <div className="c-opt-grid">
+          {[{id:'shared',label:'서비스 제공 방식 사용',sub:'별도 설정 없이 바로 사용'},
+            {id:'customer',label:'우리 회사 AI 키 사용',sub:'보유한 API 키 직접 연결'}].map(o => (
+            <div key={o.id} className={`c-opt${form.api_mode===o.id?' sel':''}`}
+              onClick={() => setForm(f=>({...f,api_mode:o.id}))}>
+              <div className="c-opt-title">{o.label}</div>
+              <div className="c-opt-sub">{o.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:'.5rem',justifyContent:'flex-end'}}>
+        <button className="btn btn-ghost" onClick={() => go('/configure/step-1')}>← 이전</button>
+        <button className="btn btn-primary" disabled={!ok}
+          onClick={() => go('/configure/result')}>구성 확인 →</button>
+      </div>
+    </div></div>
+  );
+};
+
+// ── Step 3: 추천 결과 + 분기 ───────────────────────────────
+const ConfigResult = ({ go, form, setRec }) => {
+  const rec = recommend({problem_domain:form.problem_domain,user_scope:form.user_scope}, form);
+  useEffect(() => { setRec(rec); }, []);
+
+  const typeColors = { STANDARD:'#166534', SEMI:'#92400e', CUSTOM:'#1d4ed8' };
+  const typeBgs    = { STANDARD:'#f0fdf4', SEMI:'#fffbeb', CUSTOM:'#eff6ff' };
+
+  return (
+    <div className="c-main"><div className="c-wrap">
+      <div className="c-steps">
+        {['문제 선택','환경 설정','구성 확인','주문 완료'].map((s,i) => (
+          <div key={i} className="c-step">
+            {i > 0 && <span className="c-step-sep">›</span>}
+            <div className={`c-step-dot ${i<2?'done':i===2?'active':''}`}>{i<2?'✓':i+1}</div>
+            <span className={`c-step-label ${i===2?'active':''}`}>{s}</span>
+          </div>
+        ))}
+      </div>
+      <h2 className="c-page-title">추천 구성입니다</h2>
+      <p className="c-page-sub">입력하신 정보를 바탕으로 최적 구성을 찾았습니다.</p>
+
+      <div className="c-rec" style={{marginBottom:'1.5rem'}}>
+        <div className="c-rec-type" style={{background:typeBgs[rec.system_type],color:typeColors[rec.system_type]}}>
+          {LABEL[rec.system_type]}
+        </div>
+        <div className="c-rec-engine">{rec.engine}</div>
+        <div className="c-rec-desc">{rec.description}</div>
+        <div className="c-price">{rec.price}</div>
+      </div>
+
+      {/* 다음 단계 안내 — 내부 경로 숨김 */}
+      <div className="card card-sm" style={{marginBottom:'2rem'}}>
+        <div style={{fontWeight:600,marginBottom:'.75rem'}}>진행 방식</div>
+        {rec.system_type === 'STANDARD' && (
+          <div className="alert alert-ok">기본 정보를 입력하면 바로 시작할 수 있습니다.</div>
+        )}
+        {rec.system_type === 'SEMI' && (
+          <div className="alert alert-info">담당자가 환경을 간단히 확인한 후 빠르게 진행합니다. 보통 1~2 영업일 내 연락드립니다.</div>
+        )}
+        {rec.system_type === 'CUSTOM' && (
+          <div className="alert alert-info">요구사항을 함께 정의하고 맞춤 구성을 제안드립니다. 접수 후 2~3 영업일 내 담당자가 연락드립니다.</div>
+        )}
+      </div>
+
+      <div style={{display:'flex',gap:'.5rem',justifyContent:'flex-end',flexWrap:'wrap'}}>
+        <button className="btn btn-ghost" onClick={() => go('/configure/step-2')}>← 이전</button>
+        <button className="btn btn-primary" onClick={() => go('/order/confirm')}>
+          {rec.system_type === 'CUSTOM' ? '프로젝트 접수하기' : '주문 신청하기'} →
+        </button>
+      </div>
+    </div></div>
+  );
+};
+
+// ── Step 4: 주문 확정 ─────────────────────────────────────
+const OrderConfirm = ({ go, form, rec }) => {
+  const [info, setInfo] = useState({ company:'', name:'', email:'', phone:'', memo:'', agreed:false });
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const setI = (k,v) => setInfo(f => ({...f,[k]:v}));
+  const ok = info.company && info.name && info.email && info.agreed;
+
+  const submit = async () => {
+    if (!ok) { setErr('MISSING_FIELD'); return; }
+    setLoading(true); setErr('');
+    try {
+      const publicOrderId = genPublicId();
+      // 내부 ID는 서버에서 자동 생성 — 고객에게 노출 안 함
+      const payload = {
+        actor_id:    'auto_' + Date.now(), // 서버에서 교체
+        actor_role:  rec?.system_type === 'CUSTOM' ? 'Sales' : 'Customer',
+        customer_id: 'auto_' + publicOrderId,
+        problem:     { problem_domain: form.problem_domain, user_scope: form.user_scope },
+        config:      form,
+        recommendation: rec,
+        policy_version: 'v1',
+        // 고객 입력값
+        contact: { company: info.company, name: info.name, email: info.email, phone: info.phone, memo: info.memo },
+        public_order_id: publicOrderId,
+      };
+
+      if (rec?.system_type === 'CUSTOM') {
+        await customerFetch('/ai-product/projects', { method:'POST', body: JSON.stringify(payload) });
+      } else {
+        await customerFetch('/ai-product/orders', { method:'POST', body: JSON.stringify(payload) });
+      }
+      // publicOrderId만 로컬 저장 — 내부 ID 저장하지 않음
+      localStorage.setItem('last_public_order_id', publicOrderId);
+      go('/order/status');
+    } catch(e) {
+      setErr(e.message);
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="c-main"><div className="c-wrap">
+      <div className="c-steps">
+        {['문제 선택','환경 설정','구성 확인','주문 완료'].map((s,i) => (
+          <div key={i} className="c-step">
+            {i > 0 && <span className="c-step-sep">›</span>}
+            <div className={`c-step-dot ${i<3?'done':i===3?'active':''}`}>{i<3?'✓':i+1}</div>
+            <span className={`c-step-label ${i===3?'active':''}`}>{s}</span>
+          </div>
+        ))}
+      </div>
+      <h2 className="c-page-title">신청 정보를 입력해주세요</h2>
+      <p className="c-page-sub">담당자가 연락드릴 수 있도록 정확히 입력해주세요.</p>
+
+      {err && <div className="alert alert-err" style={{marginBottom:'1rem'}}>{friendlyError(err)}</div>}
+
+      <div className="card" style={{marginBottom:'1.5rem'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+          <div>
+            <label>회사명 *</label>
+            <input placeholder="(주)회사명" value={info.company} onChange={e=>setI('company',e.target.value)} />
+          </div>
+          <div className="grid2">
+            <div>
+              <label>담당자 성함 *</label>
+              <input placeholder="홍길동" value={info.name} onChange={e=>setI('name',e.target.value)} />
+            </div>
+            <div>
+              <label>연락처</label>
+              <input placeholder="010-0000-0000" value={info.phone} onChange={e=>setI('phone',e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label>이메일 *</label>
+            <input type="email" placeholder="name@company.com" value={info.email} onChange={e=>setI('email',e.target.value)} />
+          </div>
+          <div>
+            <label>추가 요청사항</label>
+            <textarea rows={3} placeholder="특별히 고려해야 할 사항이 있으면 알려주세요"
+              value={info.memo} onChange={e=>setI('memo',e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {rec && (
+        <div className="card card-sm" style={{marginBottom:'1.5rem',background:'var(--bg)'}}>
+          <div style={{fontSize:'.8rem',color:'var(--sub)',marginBottom:'.5rem',fontWeight:600}}>신청 구성 요약</div>
+          <div style={{fontWeight:700}}>{rec.engine}</div>
+          <div style={{fontSize:'.82rem',color:'var(--sub)',marginTop:'.25rem'}}>{LABEL[rec.system_type]}</div>
+          <div style={{fontSize:'.82rem',color:'var(--accent2)',marginTop:'.25rem',fontFamily:'var(--mono)'}}>{rec.price}</div>
+        </div>
+      )}
+
+      <label style={{display:'flex',gap:'.6rem',alignItems:'flex-start',marginBottom:'1.5rem',cursor:'pointer'}}>
+        <input type="checkbox" checked={info.agreed} onChange={e=>setI('agreed',e.target.checked)}
+          style={{width:'auto',marginTop:'2px'}} />
+        <span style={{fontSize:'.82rem',color:'var(--sub)',lineHeight:1.5}}>
+          입력한 연락처 정보를 서비스 안내 목적으로 수집하는 것에 동의합니다.
+        </span>
+      </label>
+
+      <div style={{display:'flex',gap:'.5rem',justifyContent:'flex-end'}}>
+        <button className="btn btn-ghost" onClick={() => go('/configure/result')}>← 이전</button>
+        <button className="btn btn-primary" disabled={!ok || loading} onClick={submit}>
+          {loading ? <><span className="spin"/>&nbsp;처리 중...</> : '신청 완료'}
+        </button>
+      </div>
+    </div></div>
+  );
+};
+
+// ── 주문 상태 페이지 ──────────────────────────────────────
+const OrderStatus = ({ go }) => {
+  const [publicId, setPublicId] = useState(localStorage.getItem('last_public_order_id') || '');
+  const [inputId, setInputId] = useState('');
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  // 저장된 주문이 있으면 자동으로 상태 표시
+  useEffect(() => {
+    if (publicId) simulateStatus(publicId);
+  }, []);
+
+  // API 없을 때 오프라인 상태 시뮬레이션
+  const simulateStatus = (id) => {
+    setStatus({ publicOrderId: id, customerStatus: '접수됨', nextAction: '담당자가 확인 후 이메일로 연락드립니다.' });
+  };
+
+  const lookup = async () => {
+    const id = inputId.trim() || publicId;
+    if (!id) return;
+    setLoading(true); setErr('');
+    try {
+      // API 연결 시 실제 조회 — 없으면 오프라인 표시
+      simulateStatus(id);
+    } catch {
+      setErr('CUSTOMER_ERROR');
+    } finally { setLoading(false); }
+  };
+
+  const PROG_STEPS = [
+    { key:'접수됨',   label:'접수 완료',     sub:'주문이 접수되었습니다' },
+    { key:'검토중',   label:'검토 중',       sub:'담당자가 확인하고 있습니다' },
+    { key:'설정중',   label:'설정 진행 중',  sub:'시스템을 구성하고 있습니다' },
+    { key:'완료',     label:'완료',          sub:'사용 준비가 완료되었습니다' },
+  ];
+
+  const stepIdx = status ? PROG_STEPS.findIndex(s => s.key === status.customerStatus) : -1;
+
+  return (
+    <div className="c-main"><div className="c-wrap">
+      <h2 className="c-page-title">주문 진행 상태</h2>
+      <p className="c-page-sub">주문 번호로 현재 진행 상황을 확인하세요.</p>
+
+      {err && <div className="alert alert-err" style={{marginBottom:'1rem'}}>{friendlyError(err)}</div>}
+
+      <div style={{display:'flex',gap:'.5rem',marginBottom:'1.5rem'}}>
+        <input placeholder="주문번호 입력 (예: ORD-ABC123-XYZ)" value={inputId}
+          onChange={e=>setInputId(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&lookup()} style={{flex:1}} />
+        <button className="btn btn-outline" onClick={lookup} disabled={loading}>
+          {loading ? <span className="spin"/> : '조회'}
+        </button>
+      </div>
+
+      {status && (
+        <div>
+          <div className="card" style={{marginBottom:'1rem'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+                          marginBottom:'1rem',flexWrap:'wrap',gap:'.5rem'}}>
+              <div>
+                <div style={{fontSize:'.75rem',color:'var(--muted)',marginBottom:'.2rem'}}>주문번호</div>
+                <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem'}}>{status.publicOrderId}</div>
+              </div>
+              <span className={`c-status ${status.customerStatus.replace(/\s/g,'')}`}>
+                {/* 상태 아이콘 */}
+                {status.customerStatus === '완료' ? '✓' :
+                 status.customerStatus === '추가정보필요' ? '!' : '○'}
+                &nbsp;{status.customerStatus}
+              </span>
+            </div>
+
+            {/* 진행 단계 — 고객 언어로만 */}
+            <div className="c-progress">
+              {PROG_STEPS.map((s,i) => (
+                <div key={i} className="c-prog-item">
+                  <div className={`c-prog-dot ${i < stepIdx ? 'done' : i === stepIdx ? 'active' : 'pending'}`}>
+                    {i < stepIdx ? '✓' : i+1}
+                  </div>
+                  <div>
+                    <div className="c-prog-label" style={{color: i <= stepIdx ? 'var(--text)' : 'var(--muted)'}}>{s.label}</div>
+                    {i === stepIdx && <div className="c-prog-sub">{s.sub}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {status.nextAction && (
+            <div className="alert alert-info">{status.nextAction}</div>
+          )}
+        </div>
+      )}
+
+      {!status && !err && (
+        <div style={{textAlign:'center',padding:'3rem',color:'var(--muted)'}}>
+          <div style={{fontSize:'2rem',marginBottom:'.5rem'}}>○</div>
+          <div style={{fontSize:'.85rem'}}>주문번호를 입력하면 진행 상황을 확인할 수 있습니다</div>
+          <button className="btn btn-ghost" style={{marginTop:'1rem'}}
+            onClick={() => go('/configure/step-1')}>새 주문 신청하기</button>
+        </div>
+      )}
+    </div></div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// ── 관리자 세계 ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+// ── 관리자 로그인 게이트 ──────────────────────────────────
+const AdminGate = ({ onAuth }) => {
+  const [pin, setPin] = useState('');
+  const [err, setErr] = useState(false);
+  const attempt = () => {
+    if (pin === ADMIN_PIN) { setAdmin(); onAuth(); }
+    else { setErr(true); setPin(''); }
+  };
+  return (
+    <div style={{height:'100%',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+      <div style={{width:'100%',maxWidth:'360px',padding:'1rem'}}>
+        <div style={{fontFamily:'var(--mono)',fontSize:'.75rem',color:'var(--accent)',
+                      letterSpacing:'.08em',marginBottom:'1.5rem',textAlign:'center'}}>
+          ADMIN ACCESS
+        </div>
+        {err && <div className="alert alert-err" style={{marginBottom:'1rem'}}>인증 실패. 다시 시도하세요.</div>}
+        <input type="password" placeholder="PIN" value={pin} onChange={e=>{setPin(e.target.value);setErr(false);}}
+          onKeyDown={e=>e.key==='Enter'&&attempt()}
+          style={{textAlign:'center',letterSpacing:'.3em',fontSize:'1.2rem',marginBottom:'.75rem'}} />
+        <button className="btn btn-primary" onClick={attempt} style={{width:'100%'}}>입장</button>
+      </div>
+    </div>
+  );
+};
+
+// ── 관리자 설정 모달 ──────────────────────────────────────
+const AdminSettings = ({ onClose }) => {
+  const [url, setUrl] = useState(getApiUrl());
+  const save = () => { localStorage.setItem('api_url', url.replace(/\/$/,'')); onClose(); };
+  return (
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <div className="modal-title">
+          <span>운영 설정</span>
+          <button className="close-x" onClick={onClose}>✕</button>
+        </div>
+        <div className="alert alert-info" style={{marginBottom:'1rem',fontSize:'.8rem'}}>
+          백엔드 API 서버 주소를 설정합니다. Railway / Render / 로컬 모두 지원.
+        </div>
+        <label>API 서버 URL</label>
+        <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://your-server.railway.app" />
+        <div style={{display:'flex',gap:'.5rem',marginTop:'1rem',justifyContent:'flex-end'}}>
+          <button className="btn btn-ghost" onClick={onClose}>취소</button>
+          <button className="btn btn-primary" onClick={save}>저장</button>
+        </div>
+        <div className="divider"/>
+        <div style={{fontSize:'.75rem',color:'var(--sub)'}}>
+          <div style={{marginBottom:'.4rem',fontWeight:600}}>기본 PIN 변경</div>
+          <div>현재 PIN: <span style={{fontFamily:'var(--mono)'}}>{ADMIN_PIN}</span></div>
+          <div style={{marginTop:'.3rem',color:'var(--muted)'}}>실서비스 전 코드에서 ADMIN_PIN 상수를 교체하세요.</div>
+        </div>
+        <div style={{marginTop:'.75rem',textAlign:'right'}}>
+          <button className="btn btn-danger" style={{fontSize:'.75rem'}}
+            onClick={() => { clearAdmin(); window.location.hash = '/'; window.location.reload(); }}>
+            로그아웃
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── 관리자 헤더 ───────────────────────────────────────────
+const AHeader = ({ aPage, setAPage }) => {
+  const [showSettings, setShowSettings] = useState(!getApiUrl());
+  const nav = [
+    { id:'dashboard', label:'대시보드' },
+    { id:'events',    label:'이벤트 로그' },
+    { id:'tickets',   label:'티켓 큐' },
+  ];
+  return (
+    <>
+      <header className="a-header">
+        <div className="a-logo">AIOPS ◈ ADMIN</div>
+        <nav className="a-nav">
+          {nav.map(n => (
+            <button key={n.id} className={`a-nav-btn${aPage===n.id?' active':''}`}
+              onClick={() => setAPage(n.id)}>{n.label}</button>
+          ))}
+        </nav>
+        <div className="a-header-end">
+          <div className="a-status" title="운영 중"/>
+          <button className="a-settings-btn" onClick={() => setShowSettings(true)}>
+            {getApiUrl() || '⚙ 서버 설정 필요'}
+          </button>
+        </div>
+      </header>
+      {showSettings && <AdminSettings onClose={() => setShowSettings(false)} />}
+    </>
+  );
+};
+
+// ── 관리자 대시보드 ────────────────────────────────────────
+const AdminDashboard = ({ setAPage, setDetailOrder }) => {
+  const [summary, setSummary] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const since = new Date(Date.now()-86400000).toISOString();
+      const [s, e] = await Promise.all([
+        adminFetch(`/ai-product/dashboard/summary?since=${since}`),
+        adminFetch(`/ai-product/dashboard/events?limit=20`),
+      ]);
+      setSummary(s);
+      setRecentOrders(e.rows || []);
+    } catch { setSummary(null); setRecentOrders([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, []);
+
+  const failCount = summary ? Object.values(summary.failure_counts||{}).reduce((s,v)=>s+(+v),0) : 0;
+
+  return (
+    <div className="a-body"><div className="a-wrap">
+      <div className="a-sec-hd">
+        <div><div className="a-sec-title">운영 대시보드</div>
+          <div className="a-sec-sub">최근 24시간</div></div>
+        <button className="btn btn-ghost" onClick={load} disabled={loading}>
+          {loading ? <span className="spin"/> : '↻'}
+        </button>
+      </div>
+
+      {/* 통계 카드 */}
+      <div className="grid4" style={{marginBottom:'1.5rem'}}>
+        {[
+          { label:'신규 주문', val: summary?.order_count ?? '—', color:'var(--accent)', sub:'오늘 접수' },
+          { label:'RUNNING', val: summary ? (summary.running_success_rate||0)+'%' : '—', color:'var(--ok)', sub:'진입 성공률' },
+          { label:'장애/실패', val: summary ? failCount : '—', color:'var(--err)', sub:'단계별 합계' },
+          { label:'오픈 티켓', val: summary?.open_tickets ?? '—', color:'var(--warn)', sub:'처리 대기' },
+        ].map((s,i) => (
+          <div key={i} className="a-stat">
+            <div className="a-stat-label">{s.label}</div>
+            <div className="a-stat-val" style={{color:s.color}}>{s.val}</div>
+            <div className="a-stat-sub">{s.sub}</div>
+            <div className="a-stat-bar" style={{background:s.color}}/>
+          </div>
+        ))}
+      </div>
+
+      {/* 단계별 실패 */}
+      {summary?.failure_counts && failCount > 0 && (
+        <div className="card card-sm" style={{marginBottom:'1.5rem'}}>
+          <div style={{fontWeight:700,fontSize:'.82rem',marginBottom:'.75rem'}}>단계별 실패</div>
+          <div style={{display:'flex',gap:'1.5rem',flexWrap:'wrap'}}>
+            {Object.entries(summary.failure_counts).filter(([,v])=>+v>0).map(([k,v]) => (
+              <div key={k}>
+                <div style={{fontFamily:'var(--mono)',fontSize:'1.2rem',fontWeight:700,color:'var(--err)'}}>{v}</div>
+                <div style={{fontSize:'.65rem',color:'var(--sub)',textTransform:'uppercase',letterSpacing:'.06em'}}>{k}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 최근 이벤트 */}
+      <div className="card">
+        <div className="a-sec-hd" style={{marginBottom:'.75rem'}}>
+          <div style={{fontWeight:700,fontSize:'.82rem'}}>최근 이벤트</div>
+          <button className="btn btn-ghost" style={{fontSize:'.72rem',padding:'.25rem .6rem'}}
+            onClick={() => setAPage('events')}>전체 보기 →</button>
+        </div>
+        <div className="a-table-wrap">
+          <table>
+            <thead><tr>
+              <th>시각</th><th>이벤트</th><th>유형</th><th>상태</th><th>행위자</th>
+            </tr></thead>
+            <tbody>
+              {recentOrders.length === 0 && (
+                <tr><td colSpan={5} style={{textAlign:'center',padding:'2rem',color:'var(--sub)'}}>
+                  {loading ? '로딩 중...' : !getApiUrl() ? '⚙ API 서버를 먼저 설정하세요' : '이벤트 없음'}
+                </td></tr>
+              )}
+              {recentOrders.slice(0,10).map((e,i) => (
+                <tr key={i}>
+                  <td className="td-mono">{new Date(e.occurred_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</td>
+                  <td style={{fontWeight:600,fontSize:'.78rem'}}>{e.event_name}</td>
+                  <td className="td-mono td-clip">{e.object_type}</td>
+                  <td className="td-mono td-clip">{e.from_state}→{e.to_state}</td>
+                  <td className="td-mono">{e.actor_role}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div></div>
+  );
+};
+
+// ── 관리자 이벤트 로그 ────────────────────────────────────
+const AdminEvents = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState({ event_name:'', object_type:'', since:'' });
+  const [selected, setSelected] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit:'100' });
+      if (filter.event_name) params.set('event_name', filter.event_name);
+      if (filter.object_type) params.set('object_type', filter.object_type);
+      if (filter.since) params.set('since', new Date(filter.since).toISOString());
+      const r = await adminFetch(`/ai-product/dashboard/events?${params}`);
+      setEvents(r.rows || []);
+    } catch { setEvents([]); }
+    finally { setLoading(false); }
+  }, [filter]);
+
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div className="a-body"><div className="a-wrap">
+      <div className="a-sec-hd">
+        <div><div className="a-sec-title">이벤트 로그</div>
+          <div className="a-sec-sub">원본 이벤트 스트림 — 관리자 전용</div></div>
+        <button className="btn btn-ghost" onClick={load} disabled={loading}>
+          {loading ? <span className="spin"/> : '↻ 새로고침'}
+        </button>
+      </div>
+
+      {/* 필터 */}
+      <div className="card card-sm" style={{marginBottom:'1rem'}}>
+        <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+          <input style={{flex:'1',minWidth:'140px'}} placeholder="이벤트명 검색"
+            value={filter.event_name} onChange={e=>setFilter(f=>({...f,event_name:e.target.value}))} />
+          <select style={{width:'160px'}} value={filter.object_type}
+            onChange={e=>setFilter(f=>({...f,object_type:e.target.value}))}>
+            <option value="">전체 유형</option>
+            <option value="ai_config">ai_config</option>
+            <option value="ai_project">ai_project</option>
+            <option value="ai_installation">ai_installation</option>
+            <option value="ai_runtime">ai_runtime</option>
+          </select>
+          <input type="date" style={{width:'140px'}} value={filter.since}
+            onChange={e=>setFilter(f=>({...f,since:e.target.value}))} />
+          <button className="btn btn-primary" onClick={load}>조회</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="a-table-wrap">
+          <table>
+            <thead><tr>
+              <th>발생 시각</th><th>이벤트명</th><th>유형</th>
+              <th>상태 전이</th><th>행위자</th><th>원인</th><th>payload</th>
+            </tr></thead>
+            <tbody>
+              {events.length === 0 && (
+                <tr><td colSpan={7} style={{textAlign:'center',padding:'2rem',color:'var(--sub)'}}>
+                  {loading ? '로딩 중...' : !getApiUrl() ? '⚙ API 서버를 먼저 설정하세요' : '이벤트 없음'}
+                </td></tr>
+              )}
+              {events.map((e,i) => (
+                <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSelected(e)}>
+                  <td className="td-mono">{new Date(e.occurred_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                  <td style={{fontWeight:600,fontSize:'.78rem'}}>{e.event_name}</td>
+                  <td className="td-mono">{e.object_type}</td>
+                  <td className="td-mono td-clip">{e.from_state}→{e.to_state}</td>
+                  <td className="td-mono">{e.actor_role}</td>
+                  <td style={{fontSize:'.72rem',color:'var(--sub)'}}>{e.reason_code||'—'}</td>
+                  <td className="td-mono" style={{color:'var(--accent)'}}>
+                    {e.payload_json && Object.keys(e.payload_json).length > 0 ? '{…}' : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Raw 상세 모달 */}
+      {selected && (
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setSelected(null)}>
+          <div className="modal" style={{maxWidth:'600px'}}>
+            <div className="modal-title">
+              <span style={{fontFamily:'var(--mono)',fontSize:'.82rem'}}>{selected.event_name}</span>
+              <button className="close-x" onClick={()=>setSelected(null)}>✕</button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:'.5rem',fontSize:'.78rem'}}>
+              {[
+                ['object_type', selected.object_type],
+                ['object_id',   selected.object_id],
+                ['from_state',  selected.from_state],
+                ['to_state',    selected.to_state],
+                ['actor_type',  selected.actor_type],
+                ['actor_role',  selected.actor_role],
+                ['occurred_at', selected.occurred_at],
+                ['correlation_id', selected.correlation_id],
+                ['reason_code', selected.reason_code || '—'],
+              ].map(([k,v]) => (
+                <div key={k} style={{display:'flex',gap:'1rem',borderBottom:'1px solid var(--border)',paddingBottom:'.4rem'}}>
+                  <span style={{color:'var(--sub)',minWidth:'120px',fontFamily:'var(--mono)',fontSize:'.68rem'}}>{k}</span>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',wordBreak:'break-all'}}>{v||'—'}</span>
+                </div>
+              ))}
+              {selected.payload_json && Object.keys(selected.payload_json).length > 0 && (
+                <div>
+                  <div style={{color:'var(--sub)',fontFamily:'var(--mono)',fontSize:'.68rem',marginBottom:'.4rem'}}>payload_json</div>
+                  <pre style={{background:'var(--bg)',padding:'.75rem',borderRadius:'4px',fontSize:'.7rem',
+                                overflow:'auto',maxHeight:'200px',color:'var(--text)',lineHeight:1.5}}>
+                    {JSON.stringify(selected.payload_json, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div></div>
+  );
+};
+
+// ── 관리자 티켓 큐 ────────────────────────────────────────
+const AdminTickets = () => {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('OPEN');
+  const [selected, setSelected] = useState(null);
+  const [note, setNote] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await adminFetch(`/ai-product/tickets?status=${status}&limit=100`);
+      setTickets(r.tickets || []);
+    } catch { setTickets([]); }
+    finally { setLoading(false); }
+  }, [status]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resolve = async () => {
+    if (!selected || !note) return;
+    try {
+      await adminFetch(`/ai-product/tickets/${selected.ticket_id}/resolve`, {
+        method:'POST', body: JSON.stringify({ resolution_note: note }),
+      });
+      setSelected(null); setNote(''); load();
+    } catch(e) { alert(e.message); }
+  };
+
+  const STATUS_LIST = ['OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CLOSED'];
+  const levelColor = l => l==='high'||l==='blocking' ? 'var(--err)' : l==='medium' ? 'var(--warn)' : 'var(--sub)';
+
+  return (
+    <div className="a-body"><div className="a-wrap">
+      <div className="a-sec-hd">
+        <div><div className="a-sec-title">티켓 큐</div>
+          <div className="a-sec-sub">예외 처리 — 관리자 전용</div></div>
+        <div style={{display:'flex',gap:'.35rem',flexWrap:'wrap'}}>
+          {STATUS_LIST.map(s => (
+            <button key={s} className={`btn ${status===s?'btn-primary':'btn-ghost'}`}
+              style={{padding:'.3rem .65rem',fontSize:'.7rem'}}
+              onClick={()=>setStatus(s)}>{s}</button>
+          ))}
+          <button className="btn btn-ghost" onClick={load} disabled={loading}>↻</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="a-table-wrap">
+          <table>
+            <thead><tr>
+              <th>생성</th><th>유형</th><th>이벤트</th>
+              <th>고객</th><th>레벨</th><th>담당자</th><th>요약</th><th></th>
+            </tr></thead>
+            <tbody>
+              {tickets.length === 0 && (
+                <tr><td colSpan={8} style={{textAlign:'center',padding:'2rem',color:'var(--sub)'}}>
+                  {loading ? '로딩 중...' : !getApiUrl() ? '⚙ API 서버를 먼저 설정하세요' : `${status} 티켓 없음`}
+                </td></tr>
+              )}
+              {tickets.map((t,i) => (
+                <tr key={i}>
+                  <td className="td-mono">{new Date(t.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                  <td className="td-mono" style={{fontSize:'.65rem'}}>{t.ticket_type}</td>
+                  <td style={{fontSize:'.75rem',fontWeight:600,maxWidth:'140px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.event_name}</td>
+                  <td className="td-mono">{t.customer_id||'—'}</td>
+                  <td><span style={{fontFamily:'var(--mono)',fontSize:'.68rem',color:levelColor(t.event_level)}}>{t.event_level}</span></td>
+                  <td className="td-mono">{t.assignee||'미배정'}</td>
+                  <td className="td-clip" style={{fontSize:'.72rem',color:'var(--sub)',maxWidth:'160px'}}>{t.payload_summary||'—'}</td>
+                  <td>
+                    {['OPEN','ASSIGNED','IN_PROGRESS'].includes(t.status) && (
+                      <button className="btn btn-ghost" style={{padding:'.22rem .5rem',fontSize:'.68rem'}}
+                        onClick={()=>{setSelected(t);setNote('');}}>처리</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 처리 모달 */}
+      {selected && (
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setSelected(null)}>
+          <div className="modal">
+            <div className="modal-title">
+              <span>티켓 처리</span>
+              <button className="close-x" onClick={()=>setSelected(null)}>✕</button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:'.4rem',marginBottom:'1rem',fontSize:'.78rem'}}>
+              {[['ticket_id',selected.ticket_id],['event_name',selected.event_name],
+                ['object_id',selected.object_id],['원인',selected.payload_summary||'—']].map(([k,v])=>(
+                <div key={k} style={{display:'flex',gap:'1rem',borderBottom:'1px solid var(--border)',paddingBottom:'.35rem'}}>
+                  <span style={{color:'var(--sub)',minWidth:'80px',fontFamily:'var(--mono)',fontSize:'.68rem'}}>{k}</span>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.7rem',wordBreak:'break-all'}}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <label>처리 내용</label>
+            <textarea rows={3} placeholder="처리 내용을 입력하세요" value={note} onChange={e=>setNote(e.target.value)} />
+            <div style={{display:'flex',gap:'.5rem',marginTop:'1rem',justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost" onClick={()=>setSelected(null)}>취소</button>
+              <button className="btn btn-primary" onClick={resolve} disabled={!note}>해결 완료</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div></div>
+  );
+};
+
+// ── 관리자 앱 ────────────────────────────────────────────
+const AdminApp = () => {
+  const [authed, setAuthed] = useState(isAdmin());
+  const [aPage, setAPage] = useState('dashboard');
+
+  if (!authed) return (
+    <div className="world-admin" style={{height:'100%'}}>
+      <AdminGate onAuth={() => setAuthed(true)} />
+    </div>
+  );
+
+  const pages = {
+    dashboard: <AdminDashboard setAPage={setAPage} />,
+    events:    <AdminEvents />,
+    tickets:   <AdminTickets />,
+  };
+
+  return (
+    <div className="world-admin a-root">
+      <AHeader aPage={aPage} setAPage={setAPage} />
+      {pages[aPage] || pages.dashboard}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════
+// App 루트 — 라우터
+// ══════════════════════════════════════════════════════════
+const App = () => {
+  const { path, go } = useRouter();
+
+  // /admin/* → 관리자 세계
+  if (path.startsWith('/admin')) {
+    return <AdminApp />;
+  }
+
+  // 고객 상태 공유 (Step 간 이동)
+  const [form, setForm] = useState({
+    problem_domain:'', user_scope:'',
+    api_mode:'shared', data_sensitivity:'low', tech_readiness:'advanced',
+  });
+  const [rec, setRec] = useState(null);
+
+  const pages = {
+    '/':                   <Landing go={go} />,
+    '/configure/step-1':   <Step1 go={go} form={form} setForm={setForm} />,
+    '/configure/step-2':   <Step2 go={go} form={form} setForm={setForm} />,
+    '/configure/result':   <ConfigResult go={go} form={form} setRec={setRec} />,
+    '/order/confirm':      <OrderConfirm go={go} form={form} rec={rec} />,
+    '/order/status':       <OrderStatus go={go} />,
+  };
+
+  // 404: 랜딩으로
+  const page = pages[path] || <Landing go={go} />;
+
+  return (
+    <div className="world-customer c-root">
+      <CHeader go={go} />
+      {page}
+      <footer className="c-footer">
+        © 2026 AI운영체계 스튜디오 &nbsp;·&nbsp;
+        <a href="#/admin" style={{color:'var(--muted)',textDecoration:'none'}}>관리자</a>
+      </footer>
+    </div>
+  );
+};
+
+// 상태를 최상단에 유지하기 위해 App을 래핑
+const Root = () => {
+  const { path } = useRouter();
+  if (path.startsWith('/admin')) return <AdminApp />;
+  return <CustomerShell />;
+};
+
+const CustomerShell = () => {
+  const { path, go } = useRouter();
+  const [form, setForm] = useState({
+    problem_domain:'', user_scope:'',
+    api_mode:'shared', data_sensitivity:'low', tech_readiness:'advanced',
+  });
+  const [rec, setRec] = useState(null);
+
+  const pages = {
+    '/':                   <Landing go={go} />,
+    '/configure/step-1':   <Step1 go={go} form={form} setForm={setForm} />,
+    '/configure/step-2':   <Step2 go={go} form={form} setForm={setForm} />,
+    '/configure/result':   <ConfigResult go={go} form={form} setRec={setRec} />,
+    '/order/confirm':      <OrderConfirm go={go} form={form} rec={rec} />,
+    '/order/status':       <OrderStatus go={go} />,
+  };
+
+  return (
+    <div className="world-customer c-root">
+      <CHeader go={go} />
+      {pages[path] || <Landing go={go} />}
+      <footer className="c-footer">
+        © 2026 AI운영체계 스튜디오 &nbsp;·&nbsp;
+        <a href="#/admin" style={{color:'var(--muted)',textDecoration:'none',fontSize:'.72rem'}}>운영자</a>
+      </footer>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+</script>
+</body>
+</html>

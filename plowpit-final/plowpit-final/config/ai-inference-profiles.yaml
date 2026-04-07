@@ -1,0 +1,106 @@
+# =============================================================================
+# config/ai-inference-profiles.yaml
+# 출처: NemoClaw (NVIDIA) — nemoclaw-blueprint/blueprint.yaml 구조 차용
+# 원본 라이선스: Apache-2.0
+#
+# 우리 엔진에서의 역할:
+#   - AI Assist가 실제 LLM에 연결될 때 사용할 추론 프로파일
+#   - profile 이름으로 src/ai-assist/ai-endpoint-config.ts 설정과 연결
+#   - 이 파일의 내용이 최종 상태를 확정하지 않음 (AI는 보조층)
+#   - Admin이 엔드포인트 설정 확정 시 참고
+#
+# 지원 프로파일:
+#   default    → NVIDIA Cloud API (build.nvidia.com)
+#   nim-local  → 로컬 NIM 서비스
+#   vllm       → 로컬 vLLM 서버
+#   ollama     → 로컬 Ollama
+# =============================================================================
+
+version: "1.0.0"
+
+# ── 기본 모델 목록 (NVIDIA Nemotron 계열) ──────────────────────────────────
+# 출처: NemoClaw index.ts activeModelEntries()
+default_models:
+  - id: "nvidia/nemotron-3-super-120b-a12b"
+    label: "Nemotron 3 Super 120B"
+    context_window: 131072
+    max_output: 8192
+    recommended_for: ["inquiry_parsing", "quote_draft"]
+
+  - id: "nvidia/llama-3.1-nemotron-ultra-253b-v1"
+    label: "Nemotron Ultra 253B"
+    context_window: 131072
+    max_output: 4096
+    recommended_for: ["exception_classification"]
+
+  - id: "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+    label: "Nemotron Super 49B v1.5"
+    context_window: 131072
+    max_output: 4096
+    recommended_for: ["inquiry_parsing"]
+
+  - id: "nvidia/nemotron-3-nano-30b-a3b"
+    label: "Nemotron 3 Nano 30B (경량)"
+    context_window: 131072
+    max_output: 4096
+    recommended_for: ["quick_flag"]
+
+# ── 추론 프로파일 ──────────────────────────────────────────────────────────
+profiles:
+
+  # NVIDIA Cloud API
+  default:
+    provider_type: "nvidia"
+    provider_name: "nvidia-cloud"
+    endpoint: "https://integrate.api.nvidia.com/v1"
+    model: "nvidia/nemotron-3-super-120b-a12b"
+    credential_env: "NVIDIA_API_KEY"
+    description: "NVIDIA Cloud API (build.nvidia.com). 외부 API 키 필요."
+
+  # 로컬 NIM 컨테이너
+  nim-local:
+    provider_type: "openai"
+    provider_name: "nim-local"
+    endpoint: "http://localhost:8000/v1"
+    model: "nvidia/nemotron-3-super-120b-a12b"
+    credential_env: "NIM_API_KEY"
+    description: "로컬 NVIDIA NIM 컨테이너. docker run 후 사용."
+
+  # 로컬 vLLM 서버
+  vllm:
+    provider_type: "openai"
+    provider_name: "vllm-local"
+    endpoint: "http://localhost:8000/v1"
+    model: "nvidia/nemotron-3-nano-30b-a3b"
+    credential_env: "OPENAI_API_KEY"
+    credential_default: "dummy"
+    description: "로컬 vLLM 서버. 빠른 추론, 소형 모델 권장."
+
+  # 로컬 Ollama
+  ollama:
+    provider_type: "openai"
+    provider_name: "ollama-local"
+    endpoint: "http://localhost:11434/v1"
+    model: "mistral"
+    credential_env: "OLLAMA_API_KEY"
+    credential_default: "ollama"
+    description: "로컬 Ollama. 가장 쉬운 설치. ollama run mistral 후 사용."
+
+# ── 우리 엔진 AI 허용 작업 (원칙 고정) ──────────────────────────────────
+# 이 목록 외 작업에 AI를 사용하면 안 됨
+allowed_ai_operations:
+  - inquiry_text_parsing        # 문의 텍스트 파싱 → structured data
+  - item_extraction             # 품목/수량/납기 추출
+  - quote_draft_generation      # 견적 초안 작성
+  - exception_type_suggestion   # 예외 유형 추천
+  - missing_field_warning       # 누락 필드 경고
+  - delay_risk_warning          # 지연 가능성 경고
+
+# AI 절대 금지 작업 (코드로도 강제됨 — permission.constants.ts)
+forbidden_ai_operations:
+  - quote_final_approval        # 견적 최종 확정
+  - order_confirmation          # 주문 확정
+  - inventory_final_judgment    # 재고 최종 판정
+  - shipment_completion         # 출고 완료 확정
+  - exception_closure           # 예외 종료
+  - permission_bypass           # 권한 우회
